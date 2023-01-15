@@ -1,0 +1,133 @@
+﻿@page "/"
+@using TypingGame.Models
+
+<style>
+	.game-text{
+		font-size: 72px;
+		font-weight: bold;
+		margin-right: 4px;
+	}
+
+	.correct{
+		color: green;
+	}
+
+	.wrong{
+		color:red;
+	}
+</style>
+
+<div @ref="parentDiv" @onkeydown="OnType" tabindex="0">
+	<div class="row">
+		<div class="col-12">
+			<div class="card">
+				<div class="card-body">
+					@for (var ch=0; ch< generatedChar.Length; ch++)
+					{
+						<span class="game-text @status[ch]">@generatedChar[ch]</span>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-12">
+			<div class="card">
+				<div class="card-body">
+					<span>Correct: @stats.Correct</span>
+					<span>Missed: @stats.Missed</span>
+					<span>Total: @stats.Total</span>
+					<span>Accuracy: @stats.Accuracy %</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code{
+	//deklarasi
+	string alphabet = "QWERTYUIOPASDFGHJKLZXCVBNM";
+	char[] generatedChar = new char[7];
+	string[] status = new string[7];
+
+	//fungsi random
+	Random random = new Random();
+
+	Stats stats;
+
+	public ElementReference parentDiv;
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+			await parentDiv.FocusAsync();
+	}
+
+	//memulai game
+	private void SetUpGame()
+	{
+		//memanggil dari clas Stats
+		stats = new Stats();
+		stats.Correct = 0;
+		stats.Missed = 0;
+		stats.Total = 0;
+		stats.Accuracy = 0;
+
+		GenerateChar();
+	}
+
+	//merender aplikasi
+	protected override void OnInitialized()
+	{
+		SetUpGame();
+	}
+
+	int cursor = 0;
+	public void OnType(KeyboardEventArgs e)
+	{
+		//saat kondisi benar(antara huruf dan yang diklik dari keyboard)
+		if (e.Key == generatedChar[cursor].ToString().ToLower())
+		{
+			stats.Correct++;
+			//memberi warna jika benar
+			status[cursor] = "correct";
+			cursor++;
+		//saat kondisi salah
+		}
+		else{
+			stats.Missed++;
+			//memberi warna jika salah
+			status[cursor] = "wrong";
+		}
+
+		//reset random karakter jika semua sudah benar
+		if (cursor>=7)
+		{
+			status = new string[7];
+			cursor = 0;
+			GenerateChar();
+		}
+
+		//mereset game jika sudah 5x salah
+		if(stats.Missed == 5)
+		{
+			status = new string[7];
+			cursor = 0;
+			SetUpGame();
+		}
+		//memanggil total dan Akurasi dari class Stats
+		stats.CountTotal();
+		stats.CountAccuracy();
+	}
+
+	//membuat karakter random
+	public void GenerateChar()
+	{
+		{
+			for (int i = 0; i < 7; i++)
+			{
+				generatedChar[i] = alphabet[random.Next(alphabet.Length)];
+			}
+		}
+	}
+}
